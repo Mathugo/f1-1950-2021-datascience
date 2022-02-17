@@ -25,14 +25,14 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.circuits (
-    "circuitsId" integer NOT NULL,
-    "circuitRef" name,
-    name name,
-    location name,
-    country name,
+    "circuitId" bigint,
+    "circuitRef" text,
+    name text,
+    location text,
+    country text,
     lat double precision,
     lng double precision,
-    alt smallint
+    alt text
 );
 
 
@@ -43,11 +43,11 @@ ALTER TABLE public.circuits OWNER TO root;
 --
 
 CREATE TABLE public.constructor_results (
-    "constructorResultsId" integer NOT NULL,
-    "raceId" smallint,
-    "constructorId" smallint,
-    points smallint,
-    status character(3)[]
+    "constructorResultsId" bigint,
+    "raceId" bigint,
+    "constructorId" bigint,
+    points double precision,
+    status text
 );
 
 
@@ -58,13 +58,13 @@ ALTER TABLE public.constructor_results OWNER TO root;
 --
 
 CREATE TABLE public.constructor_standings (
-    "constructorStandingsId" integer NOT NULL,
-    "raceId" smallint,
-    "constructorId" smallint,
-    points smallint,
-    "position" smallint,
-    "positionText" smallint,
-    wins smallint
+    "constructorStandingsId" bigint,
+    "raceId" bigint,
+    "constructorId" bigint,
+    points double precision,
+    "position" bigint,
+    "positionText" text,
+    wins bigint
 );
 
 
@@ -75,10 +75,10 @@ ALTER TABLE public.constructor_standings OWNER TO root;
 --
 
 CREATE TABLE public.constructors (
-    "constructorId" smallint NOT NULL,
-    "constructorRef" name,
-    name name,
-    nationality name
+    "constructorId" bigint,
+    "constructorRef" text,
+    name text,
+    nationality text
 );
 
 
@@ -89,13 +89,13 @@ ALTER TABLE public.constructors OWNER TO root;
 --
 
 CREATE TABLE public.driver_standings (
-    "driverStandingsId" smallint NOT NULL,
-    "raceId " smallint,
-    "driverId" smallint,
-    points smallint,
-    "position" smallint,
-    "positionText" smallint,
-    wins smallint
+    "driverStandingsId" bigint,
+    "raceId" bigint,
+    "driverId" bigint,
+    points double precision,
+    "position" bigint,
+    "positionText" text,
+    wins bigint
 );
 
 
@@ -106,14 +106,14 @@ ALTER TABLE public.driver_standings OWNER TO root;
 --
 
 CREATE TABLE public.drivers (
-    "driverId" smallint NOT NULL,
-    "driverRef" name,
-    number smallint,
-    code character(5)[],
-    forename character(20)[],
-    surname character(20)[],
-    dob date,
-    nationality character(20)[]
+    "driverId" bigint,
+    "driverRef" text,
+    number text,
+    code text,
+    forename text,
+    surname text,
+    dob text,
+    nationality text
 );
 
 
@@ -124,12 +124,12 @@ ALTER TABLE public.drivers OWNER TO root;
 --
 
 CREATE TABLE public.lap_times (
-    "raceId" smallint,
-    "driverId" smallint,
-    lap smallint,
-    "position" smallint,
-    "time" time(6) without time zone,
-    milliseconds integer
+    "raceId" bigint,
+    "driverId" bigint,
+    lap bigint,
+    "position" bigint,
+    "time" text,
+    milliseconds bigint
 );
 
 
@@ -140,13 +140,13 @@ ALTER TABLE public.lap_times OWNER TO root;
 --
 
 CREATE TABLE public.pit_stops (
-    "raceId" integer,
-    "driverId" integer,
-    lap smallint,
-    stop smallint,
-    "time" time(6) without time zone,
-    milliseconds integer,
-    duration double precision
+    "raceId" bigint,
+    "driverId" bigint,
+    stop bigint,
+    lap bigint,
+    "time" text,
+    duration text,
+    milliseconds bigint
 );
 
 
@@ -157,15 +157,15 @@ ALTER TABLE public.pit_stops OWNER TO root;
 --
 
 CREATE TABLE public.qualifying (
-    "qualifyId" integer NOT NULL,
-    "raceId" smallint,
-    "driveId" smallint,
-    "constructorId" smallint,
-    number smallint,
-    "position" smallint,
-    q1 time(6) without time zone,
-    q2 time(6) without time zone,
-    q3 time(6) without time zone
+    "qualifyId" bigint,
+    "raceId" bigint,
+    "driverId" bigint,
+    "constructorId" bigint,
+    number bigint,
+    "position" bigint,
+    q1 text,
+    q2 text,
+    q3 text
 );
 
 
@@ -176,13 +176,13 @@ ALTER TABLE public.qualifying OWNER TO root;
 --
 
 CREATE TABLE public.races (
-    "raceId" interval NOT NULL,
-    year smallint,
-    round smallint,
-    "circuitId" smallint,
-    name name,
-    date date,
-    "time" time(6) without time zone
+    "raceId" bigint,
+    year bigint,
+    round bigint,
+    "circuitId" bigint,
+    name text,
+    date text,
+    "time" text
 );
 
 
@@ -193,119 +193,52 @@ ALTER TABLE public.races OWNER TO root;
 --
 
 CREATE TABLE public.results (
-    "resultId" integer NOT NULL,
-    "raceId" smallint,
-    "driverId" smallint,
-    "constructorId" smallint,
-    number smallint,
-    grid smallint,
-    "position" smallint,
-    "positionText" smallint,
-    "positionOrder" smallint,
-    points smallint,
-    laps smallint,
-    "time" name,
-    milliseconds integer,
-    "fastestLapTime" smallint,
-    rank smallint,
-    "fastestLapSpeed" name,
-    "statusId" integer
+    "resultId" bigint,
+    "raceId" bigint,
+    "driverId" bigint,
+    "constructorId" bigint,
+    number text,
+    grid bigint,
+    "position" text,
+    "positionText" text,
+    "positionOrder" bigint,
+    points double precision,
+    laps bigint,
+    "time" text,
+    milliseconds text,
+    "fastestLap" text,
+    rank text,
+    "fastestLapTime" text,
+    "fastestLapSpeed" text,
+    "statusId" bigint
 );
 
 
 ALTER TABLE public.results OWNER TO root;
 
 --
+-- Name: seasons; Type: TABLE; Schema: public; Owner: root
+--
+
+CREATE TABLE public.seasons (
+    year bigint,
+    url text
+);
+
+
+ALTER TABLE public.seasons OWNER TO root;
+
+--
 -- Name: status; Type: TABLE; Schema: public; Owner: root
 --
 
 CREATE TABLE public.status (
-    "statusId" smallint NOT NULL,
-    status name
+    "statusId" bigint,
+    status text
 );
 
 
 ALTER TABLE public.status OWNER TO root;
-
---
--- Name: circuits circuits_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.circuits
-    ADD CONSTRAINT circuits_pkey PRIMARY KEY ("circuitsId");
-
-
---
--- Name: constructor_results constructor_results_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.constructor_results
-    ADD CONSTRAINT constructor_results_pkey PRIMARY KEY ("constructorResultsId");
-
-
---
--- Name: constructor_standings constructor_standings_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.constructor_standings
-    ADD CONSTRAINT constructor_standings_pkey PRIMARY KEY ("constructorStandingsId");
-
-
---
--- Name: constructors constructors_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.constructors
-    ADD CONSTRAINT constructors_pkey PRIMARY KEY ("constructorId");
-
-
---
--- Name: driver_standings driver_standings_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.driver_standings
-    ADD CONSTRAINT driver_standings_pkey PRIMARY KEY ("driverStandingsId");
-
-
---
--- Name: drivers drivers_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.drivers
-    ADD CONSTRAINT drivers_pkey PRIMARY KEY ("driverId");
-
-
---
--- Name: qualifying qualifying_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.qualifying
-    ADD CONSTRAINT qualifying_pkey PRIMARY KEY ("qualifyId");
-
-
---
--- Name: races races_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.races
-    ADD CONSTRAINT races_pkey PRIMARY KEY ("raceId");
-
-
---
--- Name: results results_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.results
-    ADD CONSTRAINT results_pkey PRIMARY KEY ("resultId");
-
-
---
--- Name: status statusId_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.status
-    ADD CONSTRAINT "statusId_pkey" PRIMARY KEY ("statusId");
-
 
 --
 -- PostgreSQL database dump complete

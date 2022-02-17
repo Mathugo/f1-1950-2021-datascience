@@ -1,25 +1,20 @@
 # Python ETL Tools : Petl, Pandas, ApacheAirflow
 from sys import displayhook
+from venv import create
 import pandas as pd
 import os, glob
 import kaggle
 import psycopg2
 from configparser import ConfigParser
+from sqlalchemy import create_engine
 
-
-USER="root"
-PASSWORD="informatiquedecisionnelle"
 
 dataset_path = 'dataset'
 
 class ETL:
-    def __init__(self, user_, password_, db_, server_="localhost", port_=5432) -> None:
+    def __init__(self) -> None:
         self.current_path = os.getcwd()
-        
-        print("[*] Connecting to %s .."%(db_))
         self.conn = ETL.connect()
-        print("[*] Done !")
-
 
     def extract(self) -> None:
         """ extract dataset from kaggle account and csv files """
@@ -47,26 +42,42 @@ class ETL:
             displayhook(df)
             print()
             self.dfs["name"].append((f.split("/")[-1]).split(".csv")[0])
-            self.dfs["df"].append(f)        
+            self.dfs["df"].append(df)        
     
     def transform(self):
         """ Transform data to our needs .. """
         # remove url from data 
-        pass
-
+        print("[*] Removing url column from csv files ..")
+        processed_dfs = []
+        i = 0        
+        for df in self.dfs["df"]:
+            if (self.dfs["name"][i] == "circuits"):
+                df.pop('url')
+            elif (self.dfs["name"][i] == "constructors"):
+                df.pop('url')
+            elif (self.dfs["name"][i] == "drivers"):
+                df.pop('url')
+            elif (self.dfs["name"][i] == "races"):
+                df.pop('url')
+            processed_dfs.append(df)
+            i+=1
+        self.dfs["df"] = processed_dfs
+        print("[*] Done")
+        
     def load(self):
         """ Load current csv to GCP BDD """
+        import time
         #if self.create_tables():
         # self.dfs : {name: [], df: []}
         print("Number of tables : "+str(len(self.dfs["name"])))
-        """
-        for name, df in self.dfs.items():
-            for i in range(0, len(name)):
-                df[i].to_sql(name[i], self.conn, if_exists='replace', index = False)
-        """
+        for i in range(0, len(self.dfs["name"])):
+            print("[*] Loading {} ..".format(self.dfs["name"][i]))           
+            self.dfs["df"][i].to_sql(self.dfs["name"][i], self.conn, if_exists='replace', index = False)
+            print("[*] Done ")
 
     def create_tables(self):
         """ create the tables using the sql schemas """
+        print("[*] Creating tables using schemas ..")
         with self.conn as cursor:
             cursor.execute(open("f1-1950-2021.sql", "r").read())
             return True
@@ -74,14 +85,12 @@ class ETL:
 
     def insert(self, req):
         """ Execute a single insert"""
-        cur = self.conn.cursor()
         try: 
-            cur.execute(req)
+            self.conn.execute(req)
             self.conn.commit()
         except (Exception, psycopg2.DatabaseError) as error:
             print("Error: %s" % error)
             self.conn.rollback()
-            cur.close()
             return 1
 
     @staticmethod
@@ -91,24 +100,17 @@ class ETL:
         try:
             # read connection parameters
             params = ETL.config()
-
-            # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...')
-            conn = psycopg2.connect(**params)
-		
-            # create a cursor
-            cur = conn.cursor()
-        
-            # execute a statement
-            print('PostgreSQL database version:')
-            cur.execute('SELECT version()')
             
-            # display the PostgreSQL database server version
-            db_version = cur.fetchone()
-            print(db_version)
-            cur.close()
+            # connect to the PostgreSQL server
+            print("[*] Connecting to the PostgreSQL database %s .."%(params["database"]))
 
-        
+            #conn = psycopg2.connect(**params)
+            
+            conn_string = 'postgresql://'+ params["user"]+ ':'+params["password"]+'@'+params["host"]+'/'+params["database"]
+            db = create_engine(conn_string)
+            conn = db.connect()
+            print("[*] Done !")
+
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
         finally:
@@ -129,17 +131,15 @@ class ETL:
             for param in params:
                 db[param[0]] = param[1]
         else:
-            raise Exception('Section {0} not found in the {1} file'.format(section, filename))
-
+            raise Exception('Section {0} not found in the {1} file'.format(section, filename))       
         return db
         
-
 #pandas.DataFrame.to_sql. -> apres on le stock en bdd et requete
 # 1er couche 
 # 2eme nettoyage, selection,
 # 3eme couche, presenter les données
 
-etl = ETL(USER, PASSWORD, 'f1-1950-2021')
+etl = ETL()
 
 etl.extract()
 etl.transform()
