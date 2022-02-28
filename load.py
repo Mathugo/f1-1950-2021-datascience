@@ -4,7 +4,6 @@ from venv import create
 import pandas as pd
 import os, glob
 import kaggle
-import psycopg2
 from configparser import ConfigParser
 from sqlalchemy import create_engine
 
@@ -83,16 +82,6 @@ class ETL:
             return True
         return False
 
-    def insert(self, req):
-        """ Execute a single insert"""
-        try: 
-            self.conn.execute(req)
-            self.conn.commit()
-        except (Exception, psycopg2.DatabaseError) as error:
-            print("Error: %s" % error)
-            self.conn.rollback()
-            return 1
-
     @staticmethod
     def connect():
         """ connect to postgres server"""
@@ -111,7 +100,7 @@ class ETL:
             conn = db.connect()
             print("[*] Done !")
 
-        except (Exception, psycopg2.DatabaseError) as error:
+        except (Exception) as error:
             print(error)
         finally:
             return conn
@@ -139,8 +128,8 @@ class ETL:
 # 2eme nettoyage, selection,
 # 3eme couche, presenter les données
 
-etl = ETL()
-
-etl.extract()
-etl.transform()
-etl.load()
+if __name__ == "__main__":
+    etl = ETL()
+    etl.extract()
+    etl.transform()
+    etl.load()
