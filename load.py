@@ -43,9 +43,9 @@ class ETL:
             self.dfs["name"].append((f.split("/")[-1]).split(".csv")[0])
             self.dfs["df"].append(df)        
     
-    def transform(self):
+    def transform(self) -> None:
         """ Transform data to our needs .. """
-        # remove url from data 
+        # remove url from data, driver code
         print("[*] Removing url column from csv files ..")
         processed_dfs = []
         i = 0        
@@ -58,6 +58,7 @@ class ETL:
                 df.pop('url')
             elif (self.dfs["name"][i] == "races"):
                 df.pop('url')
+            df.pop('code')
             processed_dfs.append(df)
             i+=1
         self.dfs["df"] = processed_dfs
