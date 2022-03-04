@@ -56,9 +56,9 @@ class ETL:
                 df.pop('url')
             elif (self.dfs["name"][i] == "drivers"):
                 df.pop('url')
+                df.pop('code')
             elif (self.dfs["name"][i] == "races"):
                 df.pop('url')
-            df.pop('code')
             processed_dfs.append(df)
             i+=1
         self.dfs["df"] = processed_dfs
