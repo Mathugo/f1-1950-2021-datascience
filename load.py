@@ -7,15 +7,14 @@ import kaggle
 from configparser import ConfigParser
 from sqlalchemy import create_engine
 
-
 dataset_path = 'dataset'
 
 class ETL:
-    def __init__(self) -> None:
+    def __init__(self, bdd_=None) -> None:
         self.current_path = os.getcwd()
-        self.conn = ETL.connect()
+        self.conn = ETL.connect(bdd=bdd_)
 
-    def extract(self) -> None:
+    def extract(self) -> pd.DataFrame:
         """ extract dataset from kaggle account and csv files """
         self.csv_files = glob.glob(os.path.join(dataset_path, "*.csv"))
         # getting data from kaggle 
@@ -38,12 +37,13 @@ class ETL:
             
             # print the content
             print('Content:')
-            displayhook(df)
+            #displayhook(df)
             print()
             self.dfs["name"].append((f.split("/")[-1]).split(".csv")[0])
-            self.dfs["df"].append(df)        
+            self.dfs["df"].append(df)
+        return self.dfs        
     
-    def transform(self) -> None:
+    def transform(self) -> pd.DataFrame:
         """ Transform data to our needs .. """
         # remove url from data, driver code
         print("[*] Removing url column from csv files ..")
@@ -63,12 +63,10 @@ class ETL:
             i+=1
         self.dfs["df"] = processed_dfs
         print("[*] Done")
+        return self.dfs
         
     def load(self):
         """ Load current csv to GCP BDD """
-        import time
-        #if self.create_tables():
-        # self.dfs : {name: [], df: []}
         print("Number of tables : "+str(len(self.dfs["name"])))
         for i in range(0, len(self.dfs["name"])):
             print("[*] Loading {} ..".format(self.dfs["name"][i]))           
@@ -84,19 +82,19 @@ class ETL:
         return False
 
     @staticmethod
-    def connect():
+    def connect(bdd=None):
         """ connect to postgres server"""
         conn = None
         try:
             # read connection parameters
             params = ETL.config()
-            
             # connect to the PostgreSQL server
-            print("[*] Connecting to the PostgreSQL database %s .."%(params["database"]))
-
-            #conn = psycopg2.connect(**params)
-            
-            conn_string = 'postgresql://'+ params["user"]+ ':'+params["password"]+'@'+params["host"]+'/'+params["database"]
+            if bdd==None:
+                conn_string = 'postgresql://'+ params["user"]+ ':'+params["password"]+'@'+params["host"]+'/'+params["database"]
+                bdd = params["database"]
+            else:
+                conn_string = 'postgresql://'+ params["user"]+ ':'+params["password"]+'@'+params["host"]+'/'+bdd
+            print("[*] Connecting to the PostgreSQL database %s .."%(bdd))
             db = create_engine(conn_string)
             conn = db.connect()
             print("[*] Done !")
@@ -123,14 +121,45 @@ class ETL:
         else:
             raise Exception('Section {0} not found in the {1} file'.format(section, filename))       
         return db
+
+class SecondLayer:
+    def __init__(self) -> None:
+        self.current_path = os.getcwd()
+        print("[*] Loading data and transforming it for the second layer ..")
+        self.etl = ETL(bdd_="second_layer_f1-1950-2021")
+        self.etl.extract()
+        self.dfs = self.etl.transform()
+    
+    def transform(self):
+        """ Transform data for the second layer """
+        # remove constructor_results
+        print(self.dfs)
+        i = 0
+        processed_dfs = []
+        for df in self.dfs["df"]:
+            if (self.dfs["name"][i] != "constructor_results"):
+                processed_dfs.append(df)
+            i+=1
+        self.dfs["name"].remove('constructor_results')
+        self.dfs["df"] = processed_dfs
         
+
+    def load(self):
+        pass
+
 #pandas.DataFrame.to_sql. -> apres on le stock en bdd et requete
 # 1er couche 
 # 2eme nettoyage, selection,
 # 3eme couche, presenter les données
 
 if __name__ == "__main__":
+    
     etl = ETL()
     etl.extract()
     etl.transform()
     etl.load()
+    
+    """
+    second = SecondLayer()
+    second.transform()
+    """

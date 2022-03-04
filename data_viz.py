@@ -1,10 +1,6 @@
-from typing import Any
 import streamlit as st
 import pandas as pd
 from load import ETL
-import sqlalchemy as sa
-import sys 
-import numpy as np
 from charts import Charts
 
 st.set_page_config(layout="wide")
@@ -12,10 +8,6 @@ st.set_page_config(layout="wide")
 """
 Run the script : python3 -m streamlit run data_viz.py
 """
-
-# 2eme couche dimension et fait 
-# table finale data mart
-
 
 class Queries:
     def __init__(self, conn) -> None:
@@ -107,7 +99,10 @@ st.markdown("""
 
  driver with the most number of wins at a particular track 
 
+pits stop -> est ce que ça a un impacte sur le classement ? 
 """)
+
+st.markdown(""" correlation entre fastest lap et win ? """)
 
 st.header("From a BI point of view, what can we get ? ")
 st.subheader("How often a particular driver out-qualifies his team-mate ?")
