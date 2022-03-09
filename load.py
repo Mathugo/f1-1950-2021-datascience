@@ -1,4 +1,5 @@
 # Python ETL Tools : Petl, Pandas, ApacheAirflow
+from pickle import NONE
 from sys import displayhook
 from venv import create
 import pandas as pd
@@ -36,19 +37,22 @@ class ETL:
             print('File Name:', (f.split("/")[-1]).split(".csv")[0])
             
             # print the content
-            print('Content:')
+            #print('Content:')
             #displayhook(df)
             print()
             self.dfs["name"].append((f.split("/")[-1]).split(".csv")[0])
             self.dfs["df"].append(df)
         return self.dfs        
     
-    def transform(self) -> pd.DataFrame:
+    def transform(self, dfs=None) -> pd.DataFrame:
         """ Transform data to our needs .. """
         # remove url from data, driver code
         print("[*] Removing url column from csv files ..")
         processed_dfs = []
         i = 0        
+        if dfs != None:
+            self.dfs = dfs
+
         for df in self.dfs["df"]:
             if (self.dfs["name"][i] == "circuits"):
                 df.pop('url')
@@ -65,12 +69,14 @@ class ETL:
         print("[*] Done")
         return self.dfs
         
-    def load(self):
+    def load(self, dfs=None) -> None:
         """ Load current csv to GCP BDD """
-        print("Number of tables : "+str(len(self.dfs["name"])))
-        for i in range(0, len(self.dfs["name"])):
-            print("[*] Loading {} ..".format(self.dfs["name"][i]))           
-            self.dfs["df"][i].to_sql(self.dfs["name"][i], self.conn, if_exists='replace', index = False)
+        if dfs == None:
+            dfs = self.dfs
+        print("Number of tables : "+str(len(dfs["name"])))
+        for i in range(0, len(dfs["name"])):
+            print("[*] Loading {} ..".format(dfs["name"][i]))           
+            dfs["df"][i].to_sql(dfs["name"][i], self.conn, if_exists='replace', index = False)
             print("[*] Done ")
 
     def create_tables(self):
@@ -123,43 +129,93 @@ class ETL:
         return db
 
 class SecondLayer:
-    def __init__(self) -> None:
-        self.current_path = os.getcwd()
+    def __init__(self, bdd="2-f1-1950-2021") -> None:
         print("[*] Loading data and transforming it for the second layer ..")
-        self.etl = ETL(bdd_="second_layer_f1-1950-2021")
-        self.etl.extract()
-        self.dfs = self.etl.transform()
+        self.etl = ETL(bdd_=bdd)
+        self.dfs = self.etl.extract()
+        self.dfs = self.etl.transform(self.dfs)
+        print("[*] Done")
     
-    def transform(self):
+    def transform(self) -> pd.DataFrame:
         """ Transform data for the second layer """
-        # remove constructor_results
-        print(self.dfs)
+        # remove constructor_results etc ..
         i = 0
-        processed_dfs = []
         for df in self.dfs["df"]:
-            if (self.dfs["name"][i] != "constructor_results"):
-                processed_dfs.append(df)
+
+            """ remove pk to create new tuple composite pk """
+            if (self.dfs["name"][i] == "results"):                
+                del self.dfs["df"][i]["resultId"]
+                self.dfs["df"][i]["raceId_driverId_constructorId"] = list(zip(self.dfs["df"][i].raceId, self.dfs["df"][i].driverId, self.dfs["df"][i].constructorId))
+                del self.dfs["df"][i]["raceId"]
+                del self.dfs["df"][i]["driverId"]
+                del self.dfs["df"][i]["constructorId"]
+
+            elif (self.dfs["name"][i] == "constructor_standings"):
+                del self.dfs["df"][i]["constructorStandingsId"]
+                self.dfs["df"][i]["raceId_constructorId"] = list(zip(self.dfs["df"][i]["raceId"], self.dfs["df"][i]["constructorId"]))
+                del self.dfs["df"][i]["raceId"]
+                del self.dfs["df"][i]["constructorId"]
+
+            elif (self.dfs["name"][i] == "driver_standings"):
+                del self.dfs["df"][i]["driverStandingsId"]
+                self.dfs["df"][i]["raceId_driverId"] = list(zip(self.dfs["df"][i]["raceId"], self.dfs["df"][i]["driverId"]))
+                del self.dfs["df"][i]["raceId"]
+                del self.dfs["df"][i]["driverId"]
+            
+            if (self.dfs["name"][i] == "constructor_results"):
+                del self.dfs["df"][i]
             i+=1
+
         self.dfs["name"].remove('constructor_results')
-        self.dfs["df"] = processed_dfs
-        
+        return self.dfs
+
+    def load(self, dfs=None) -> None:
+        if dfs == None:
+            self.etl.load(self.dfs)
+        else:
+            self.etl.load(dfs)
+
+class ThirdLayer:
+    def __init__(self):
+        print("[*] Loading data and transforming it for the third layer ..")
+        self.second_layer = SecondLayer("3-f1-1950-2021")
+        self.dfs = self.second_layer.transform()
+        print("[*] Done")
+
+    def transform(self):
+        """ Transform data for the third layer"""
+        i=0
+        for df in self.dfs["df"]:
+            if (self.dfs["name"][i] == "constructor_standings"):                
+                del self.dfs["df"][i]["positionText"]
+            if (self.dfs["name"][i] == "driver_standings"):                
+                del self.dfs["df"][i]["positionText"]
+            i+=1
+        return self.dfs
 
     def load(self):
-        pass
+        self.second_layer.load(self.dfs)
 
 #pandas.DataFrame.to_sql. -> apres on le stock en bdd et requete
 # 1er couche 
-# 2eme nettoyage, selection,
+# 2eme nettoyage, selection, dimension fait
 # 3eme couche, presenter les données
 
 if __name__ == "__main__":
-    
+    """
     etl = ETL()
     etl.extract()
     etl.transform()
     etl.load()
+
     
-    """
     second = SecondLayer()
     second.transform()
+    second.load()
     """
+
+    third = ThirdLayer()
+    third.transform()
+    third.load()
+    
+    
