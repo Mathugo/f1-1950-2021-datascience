@@ -1,5 +1,7 @@
 import altair as alt
 import pandas as pd
+from sqlalchemy import null
+import matplotlib
 
 class Charts:
 
@@ -29,4 +31,37 @@ class Charts:
         c1 = base.mark_arc(innerRadius=20, stroke="#fff")
         text = base.mark_text(radiusOffset=30, size=10).encode(text="category:N")
         return c1 + text
+
+    @staticmethod
+    def NumberOfPoint(df):  
+        # delete name 
+        df_plot = df.query("name != 'Williams' and name != 'Haas F1 Team' and name != 'Alfa Romeo' and name!= 'Aston Martin'")
+        
+        # calculate cumulative point 
+
+        df["date"] = pd.to_datetime(df["date"])
+        df.sort_values(by="date", inplace=True)
+
+        df["cumulative_points"] = 0
+
+        #s = df.set_index('date').resample('MS')["points"].sum()
+        #print(s)        
+    
+        return alt.Chart(df_plot).mark_trail().encode(
+            x='date:T',
+            y='points:Q',
+            color='name:N'
+        ).properties(
+    width=1400,
+    height=500
+).transform_aggregate(
+    points='sum(points)',
+    groupby=["name", "date"],
+)
+        
+    
+
+        """alt.X('monthdate(date):O', title='Grand Prix f1'),
+            alt.Y('Q(points):O', title='Points'),
+            alt.Color('name:Q', title="Team")"""
         

@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from load import ETL
 from charts import Charts
+import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
 
@@ -61,6 +62,17 @@ class Queries:
         del df["forename"]
         return df
 
+    def number_of_point(self, year=2021):
+        """ number of point per team during a year"""
+        query = """
+        select r."resultId", r."raceId", points, r."constructorId", c."name", rc."year", rc.date from results r
+        inner join races rc ON r."raceId" = rc."raceId"
+        inner join constructors c ON r."constructorId" = c."constructorId"
+        where year=2021
+        order by c."constructorId"
+        """
+        df = pd.read_sql_query(query, self.conn)
+        return df
 
 conn = ETL.connect()
 q = Queries(conn)
@@ -91,7 +103,10 @@ with col2:
     st.markdown("Again, Sir Lewis Hamilton ..")
     st.write(Charts.MostPolePie(df))
     
+data = q.number_of_point()
+st.write(data)
 
+st.write(Charts.NumberOfPoint(data))
 
 st.markdown("""
  evolution du numbre de point au championship dans le top 5 en 2021 (saison intéressante)
