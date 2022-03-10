@@ -1,78 +1,19 @@
+from pickle import NONE
 import streamlit as st
 import pandas as pd
 from load import ETL
 from charts import Charts
 import matplotlib.pyplot as plt
+from pyvis.network import Network
+import streamlit.components.v1 as components
+from queries import Queries
+
 
 st.set_page_config(layout="wide")
 
 """
 Run the script : python3 -m streamlit run data_viz.py
 """
-
-class Queries:
-    def __init__(self, conn) -> None:
-        self.conn = conn
-    
-    def most_win(self) -> list: 
-        """ get the driver with the most win"""
-        query = """select * from (
-        select count(position) as total_wins, ds."driverId" 
-        from driver_standings ds where position = 1 
-        group by ds."driverId" 
-        order by total_wins desc
-        limit 5) as ds
-        inner join drivers d ON ds."driverId" = d."driverId"
-        """
-        df = pd.read_sql_query(query, self.conn)
-        del df["driverId"]
-        del df["number"]
-        return df
-    
-    def dominant_racing_team(self) -> list:
-        """ get the most dominant team in f1"""
-        query = """
-        select * from (
-        select count(wins) as total_wins, cr."constructorId" 
-        from constructor_standings cr
-        group by cr."constructorId" 
-        order by total_wins desc
-        limit 5) as cr
-        inner join constructors c ON c."constructorId" = cr."constructorId"
-        """
-        df =  pd.read_sql_query(query, self.conn)
-        del df["constructorId"]
-        del df["constructorRef"]
-        return df
-    
-    def most_pole(self) -> list:
-        """ get the driver with the most pole """
-        query = """
-        select * from (
-        select count(position) as total_pole, ql."driverId" 
-        from qualifying ql where position = 1
-        group by ql."driverId" 
-        order by total_pole desc
-        limit 5) as ql
-        inner join drivers d ON d."driverId" = ql."driverId"
-        """
-        df = pd.read_sql_query(query, self.conn)
-        del df["driverId"]
-        del df["number"]
-        del df["forename"]
-        return df
-
-    def number_of_point(self, year=2021):
-        """ number of point per team during a year"""
-        query = """
-        select r."resultId", r."raceId", points, r."constructorId", c."name", rc."year", rc.date from results r
-        inner join races rc ON r."raceId" = rc."raceId"
-        inner join constructors c ON r."constructorId" = c."constructorId"
-        where year=2021
-        order by rc."date"
-        """
-        df = pd.read_sql_query(query, self.conn)
-        return df
 
 conn = ETL.connect()
 q = Queries(conn)
@@ -85,7 +26,7 @@ st.header("Some interesting facts about f1")
 st.subheader('Drivers with the most wins of all time')
 
 data = q.most_win()
-st.write(data)
+st.write(Charts.NumberOfWins(data))
 
 exp = st.expander("Whouawh !", expanded=True)
 col1, col2 = exp.columns(2)
@@ -103,10 +44,37 @@ with col2:
     st.markdown("Again, Sir Lewis Hamilton ..")
     st.write(Charts.MostPolePie(df))
     
-data = q.number_of_point()
-st.write(data)
+st.header("From a BI point of view, what can we get from thoses data ? ")
+st.subheader("How often a particular driver out-qualifies his team-mate ?")
 
+data = q.number_of_point()
+st.subheader("Evolution of the number of points in the 2021 season")
 st.write(Charts.NumberOfPoint(data))
+st.markdown("We can see that, although the final winner of the season was not obvious, it apear that Red bull got some big momentum and Mercedes stayed continuously a big challenger for the title.")
+
+st.subheader("Does doing the best lap of the race necessarily win the race?")
+data = q.fastest_lap_win()
+data['position'] = data['position'].replace(['\\N'],'22')
+st.markdown("By summing the position of the drivers with the fastest lap, we can see that it is not correlated to the fastestLap")
+st.write("Average position when driver have the fastestLap : "+str(round(Charts.Fastestlap(data), 2)))
+
+st.subheader("By doing very short pitstops, does it influence the team overall performance ?")
+st.markdown("Let's print out the shortest pitstop with the position of the driver ! ")
+
+data = q.pitstop_position()
+st.write(Charts.PitStop(data))
+
+
+
+"""
+st.subheader("Network")
+HtmlFile = open("nx.html", 'r', encoding='utf-8')
+source_code = HtmlFile.read() 
+components.html(source_code, height = 900,width=900)
+
+st.write(Charts.Network())
+"""
+
 
 st.markdown("""
  evolution du numbre de point au championship dans le top 5 en 2021 (saison intéressante)
@@ -118,6 +86,3 @@ pits stop -> est ce que ça a un impacte sur le classement ?
 """)
 
 st.markdown(""" correlation entre fastest lap et win ? """)
-
-st.header("From a BI point of view, what can we get ? ")
-st.subheader("How often a particular driver out-qualifies his team-mate ?")
