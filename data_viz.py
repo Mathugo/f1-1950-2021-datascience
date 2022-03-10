@@ -69,7 +69,7 @@ class Queries:
         inner join races rc ON r."raceId" = rc."raceId"
         inner join constructors c ON r."constructorId" = c."constructorId"
         where year=2021
-        order by c."constructorId"
+        order by rc."date"
         """
         df = pd.read_sql_query(query, self.conn)
         return df
