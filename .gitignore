@@ -130,3 +130,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 database.ini
+.idea/.name
+.idea/f1-1950-2021-datascience.iml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
